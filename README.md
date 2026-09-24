@@ -1,4 +1,4 @@
-# PC Repair Job Tracker
+# PC-Repair-Job-Tracker# PC Repair Job Tracker
 
 A small full-stack app to track client repair jobs from intake to completion —
 built for my own PC repair and solutions business.
