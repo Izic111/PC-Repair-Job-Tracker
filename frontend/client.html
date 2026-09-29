@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Submit a Repair Request</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+<style>
+  :root { --navy: #1F3864; --bg: #f5f6f8; --card: #ffffff; --border: #e2e4e9; --text: #23262b; --muted: #6b7280; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 24px 16px 60px; }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { color: var(--navy); font-size: 1.4rem; margin-bottom: 4px; }
+  .sub { color: var(--muted); margin-top: 0; margin-bottom: 20px; font-size: 0.9rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+  input, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; font-family: inherit; }
+  textarea { resize: vertical; min-height: 70px; }
+  button { width: 100%; background: var(--navy); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 0.95rem; cursor: pointer; }
+  button:disabled { opacity: 0.6; }
+  .error { color: #dc2626; font-size: 0.85rem; margin-top: 10px; }
+  .success { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 18px; text-align: center; }
+  .success h2 { color: #16a34a; font-size: 1.1rem; margin: 0 0 8px; }
+  .tracking-id { font-family: monospace; font-size: 1.1rem; background: white; border: 1px dashed var(--border); border-radius: 6px; padding: 10px; margin: 12px 0; word-break: break-all; }
+  .success p { font-size: 0.85rem; color: var(--muted); }
+  a.status-link { display: inline-block; margin-top: 8px; color: var(--navy); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="app" class="wrap">
+  <h1>Submit a Repair Request</h1>
+  <p class="sub">Tell us about the issue and we'll get started. You'll get a tracking link to check progress anytime.</p>
+
+  <div class="card" v-if="!submitted">
+    <div class="field">
+      <label>Your Name *</label>
+      <input v-model="form.client_name" placeholder="e.g. Grace Okon" />
+    </div>
+    <div class="field">
+      <label>Phone Number</label>
+      <input v-model="form.phone" placeholder="e.g. 08012345678" />
+    </div>
+    <div class="field">
+      <label>Device *</label>
+      <input v-model="form.device" placeholder="e.g. Dell Inspiron 14" />
+    </div>
+    <div class="field">
+      <label>Describe the Issue *</label>
+      <textarea v-model="form.issue" placeholder="What's wrong with your device?"></textarea>
+    </div>
+    <button @click="submit" :disabled="submitting">
+      {{ submitting ? 'Submitting...' : 'Submit Request' }}
+    </button>
+    <div class="error" v-if="error">{{ error }}</div>
+  </div>
+
+  <div class="success" v-else>
+    <h2>Request submitted!</h2>
+    <p>Save this tracking ID to check your repair status anytime:</p>
+    <div class="tracking-id">{{ trackingId }}</div>
+    <a class="status-link" :href="'status.html?id=' + trackingId">Check status now &rarr;</a>
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+const API_BASE = "https://pc-repair-job-tracker.onrender.com";
+
+createApp({
+  data() {
+    return {
+      form: { client_name: "", phone: "", device: "", issue: "" },
+      submitting: false,
+      submitted: false,
+      trackingId: "",
+      error: "",
+    };
+  },
+  methods: {
+    async submit() {
+      this.error = "";
+      if (!this.form.client_name || !this.form.device || !this.form.issue) {
+        this.error = "Name, device, and issue description are required.";
+        return;
+      }
+      this.submitting = true;
+      try {
+        const res = await fetch(`${API_BASE}/public/jobs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(this.form),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Something went wrong.");
+        this.trackingId = data.tracking_id;
+        this.submitted = true;
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.submitting = false;
+      }
+    },
+  },
+}).mount("#app");
+</script>
+</body>
+</html>
